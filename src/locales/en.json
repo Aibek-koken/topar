@@ -1,0 +1,152 @@
+{
+  "common": {
+    "appName": "Topar",
+    "continue": "Continue",
+    "back": "Back",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Retry"
+  },
+  "welcome": {
+    "tagline": "Buy together — pay less",
+    "subtitle": "Products from global marketplaces with group discounts up to 30% and delivery to Kazakhstan",
+    "signIn": "Sign in",
+    "signUp": "Create account"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "signInTitle": "Welcome back!",
+    "signInSubtitle": "Sign in to continue shopping",
+    "signUpTitle": "Create account",
+    "signUpSubtitle": "A few steps and group discounts are yours",
+    "haveAccount": "Already have an account? Sign in",
+    "noAccount": "No account? Create one",
+    "fillAll": "Please fill in all fields",
+    "passwordHint": "At least 6 characters"
+  },
+  "onboarding": {
+    "step": "Step {{current}} of {{total}}",
+    "interestsTitle": "What are you into?",
+    "interestsSubtitle": "Pick at least one category — your feed adapts to you",
+    "budgetTitle": "Your shopping budget?",
+    "budgetSubtitle": "We'll show products in a comfortable range",
+    "cityTitle": "Where are you?",
+    "citySubtitle": "We'll show delivery times and local groups"
+  },
+  "categories": {
+    "electronics": "Electronics",
+    "fashion": "Fashion",
+    "home": "Home & Living",
+    "beauty": "Beauty",
+    "sports": "Sports"
+  },
+  "budget": {
+    "low": "Budget",
+    "lowRange": "under 10,000 ₸",
+    "mid": "Mid-range",
+    "midRange": "10,000 – 50,000 ₸",
+    "high": "Premium",
+    "highRange": "over 50,000 ₸"
+  },
+  "esim": {
+    "title": "eSIM protection",
+    "subtitle": "Confirming it's really you and your device",
+    "stepOperator": "Contacting carrier…",
+    "stepProfile": "Reading eSIM profile…",
+    "stepBinding": "Binding device…",
+    "stepDone": "Identity confirmed",
+    "verifiedTitle": "Device verified",
+    "verifiedSubtitle": "Your account is bound to this device's eSIM. Group purchases are protected from bots and fraud.",
+    "modalTitle": "Purchase confirmation",
+    "modalSubtitle": "Quick eSIM check before joining the group",
+    "concept": "Concept of a future integration — no real carrier connection"
+  },
+  "tabs": {
+    "home": "Home",
+    "groups": "Groups",
+    "search": "Search",
+    "profile": "Profile"
+  },
+  "home": {
+    "greeting": "Hi, {{name}}!",
+    "deliveryTo": "Delivery to {{city}}",
+    "hotGroups": "🔥 Hot groups",
+    "forYou": "For you",
+    "groupPill": "Group −{{pct}}%"
+  },
+  "product": {
+    "orders_one": "{{count}} order",
+    "orders_other": "{{count}} orders",
+    "alonePrice": "Price when buying alone",
+    "groupPrice": "Group price",
+    "youSave": "You save {{amount}}",
+    "joinGroup": "Join the group",
+    "buyAlone": "Buy at regular price",
+    "buyAloneDemo": "Demo: order placed at regular price",
+    "description": "Description",
+    "shipping": "International shipping · 10–15 days",
+    "noGroup": "No active group for this product yet"
+  },
+  "group": {
+    "title": "Group buy",
+    "participants_one": "{{count}} participant",
+    "participants_other": "{{count}} participants",
+    "gapToNext": "{{count}} more to unlock −{{pct}}%",
+    "maxTier": "Maximum discount reached!",
+    "tierLadder": "Price tiers",
+    "tierOne": "1 person",
+    "tierMin": "{{count}}+ people",
+    "join": "Join",
+    "leave": "Leave group",
+    "joined": "You're in!",
+    "joinedDesc": "Price locked: {{price}}",
+    "completed": "Group closed",
+    "deadline": "Time left",
+    "target": "Goal: {{count}} participants",
+    "currentPrice": "Current price",
+    "retailPrice": "Regular price",
+    "error": "Could not join"
+  },
+  "search": {
+    "placeholder": "Search products…",
+    "all": "All",
+    "noResults": "Nothing found"
+  },
+  "profile": {
+    "verified": "Verified via eSIM",
+    "notVerified": "Not verified",
+    "interests": "Interests",
+    "budget": "Budget",
+    "city": "City",
+    "language": "Language",
+    "simIdentity": "SIM identity",
+    "myGroups": "My groups",
+    "noGroups": "You haven't joined any groups yet",
+    "signOut": "Sign out"
+  },
+  "language": {
+    "title": "App language"
+  },
+  "sim": {
+    "title": "SIM identity",
+    "intro": "Topar builds a trust layer on top of e-commerce: your eSIM becomes a buyer's digital passport.",
+    "step1Title": "eSIM in the device",
+    "step1Text": "The subscriber's cryptographic profile lives in the phone's secure chip.",
+    "step2Title": "Carrier attestation",
+    "step2Text": "The carrier confirms the number is active and belongs to this exact device.",
+    "step3Title": "Topar identity token",
+    "step3Text": "The app receives a signed token — no passwords, no SMS codes.",
+    "step4Title": "Fair groups",
+    "step4Text": "One person = one device = one seat in the group. Bots and manipulation excluded.",
+    "roadmap": "In the MVP this layer is shown conceptually. Real carrier integration is the product's next stage."
+  },
+  "countdown": {
+    "d": "d",
+    "h": "h",
+    "m": "m",
+    "s": "s"
+  }
+}
