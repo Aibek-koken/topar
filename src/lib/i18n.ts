@@ -28,10 +28,14 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 });
 
-// Restore the language the user picked last time
-AsyncStorage.getItem(LANG_KEY).then((saved) => {
-  if (saved && saved !== i18n.language) i18n.changeLanguage(saved);
-});
+// Restore the language the user picked last time.
+// Guarded: during web static rendering there is no window/localStorage.
+const isServer = typeof window === 'undefined' && typeof navigator === 'undefined';
+if (!isServer) {
+  AsyncStorage.getItem(LANG_KEY).then((saved) => {
+    if (saved && saved !== i18n.language) i18n.changeLanguage(saved);
+  });
+}
 
 export async function setAppLanguage(lang: Lang) {
   await AsyncStorage.setItem(LANG_KEY, lang);
