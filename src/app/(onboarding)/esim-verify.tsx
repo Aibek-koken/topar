@@ -3,9 +3,11 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { EsimChecklist } from '@/components/EsimChecklist';
+import { PhoneVerifyForm } from '@/components/PhoneVerifyForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { currentLang } from '@/lib/i18n';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/lib/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
@@ -16,18 +18,39 @@ export default function EsimVerify() {
   const updateProfile = useAuthStore((s) => s.updateProfile);
   const [done, setDone] = useState(false);
 
-  const finishVerification = useCallback(async () => {
-    const { interests, budget, city } = useOnboardingStore.getState();
-    await updateProfile({
-      interests,
-      budget_tier: budget,
-      city,
-      language: currentLang(),
-      esim_verified: true,
-      onboarding_completed: true,
-    });
+  // Writes onboarding data. esim_verified is NOT set here in Supabase mode:
+  // confirmPhoneOtp already set it true; skipping leaves it untouched (false
+  // for new users, true if verified in an earlier session).
+  const completeOnboarding = useCallback(
+    async (extra: { esim_verified?: boolean } = {}) => {
+      const { interests, budget, city } = useOnboardingStore.getState();
+      await updateProfile({
+        interests,
+        budget_tier: budget,
+        city,
+        language: currentLang(),
+        onboarding_completed: true,
+        ...extra,
+      });
+    },
+    [updateProfile]
+  );
+
+  // Mock mode: the staged animation marks verified, as before.
+  const finishMockVerification = useCallback(async () => {
+    await completeOnboarding({ esim_verified: true });
     setDone(true);
-  }, [updateProfile]);
+  }, [completeOnboarding]);
+
+  const handleVerified = useCallback(async () => {
+    await completeOnboarding();
+    setDone(true);
+  }, [completeOnboarding]);
+
+  const handleSkip = useCallback(async () => {
+    await completeOnboarding();
+    router.replace('/(tabs)');
+  }, [completeOnboarding, router]);
 
   return (
     <ScreenContainer>
@@ -36,9 +59,18 @@ export default function EsimVerify() {
         <Text style={typography.title}>{t('esim.title')}</Text>
         <Text style={typography.subtitle}>{t('esim.subtitle')}</Text>
 
-        <View style={styles.checklist}>
-          <EsimChecklist onDone={finishVerification} />
-        </View>
+        {!isSupabaseConfigured ? (
+          <View style={styles.checklist}>
+            <EsimChecklist onDone={finishMockVerification} />
+          </View>
+        ) : done ? null : (
+          <View style={styles.form}>
+            <PhoneVerifyForm onVerified={handleVerified} />
+            <Text style={styles.skip} onPress={handleSkip}>
+              {t('esim.skip')}
+            </Text>
+          </View>
+        )}
 
         {done && (
           <View style={styles.doneBlock}>
@@ -63,6 +95,14 @@ const styles = StyleSheet.create({
   body: { flex: 1, paddingTop: spacing.xxl, gap: spacing.md },
   step: { fontSize: 13, fontWeight: '700', color: colors.primary, textTransform: 'uppercase' },
   checklist: { paddingTop: spacing.xl },
+  form: { paddingTop: spacing.lg, gap: spacing.md },
+  skip: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+  },
   doneBlock: { gap: spacing.xs, paddingTop: spacing.md },
   doneTitle: { fontSize: 16, fontWeight: '800', color: colors.success },
   doneText: { fontSize: 13.5, color: colors.textSecondary, lineHeight: 20 },
