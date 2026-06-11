@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router/js-tabs';
+import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColorValue } from 'react-native';
