@@ -1,6 +1,7 @@
 import type { SourceAdapter } from '../types';
 import { aliexpress } from './aliexpress';
 import { amazon } from './amazon';
-import { temu } from './temu';
 
-export const adapters: SourceAdapter[] = [aliexpress, amazon, temu];
+// Temu intentionally excluded: no RapidAPI subscription. The adapter stays in
+// ./temu.ts — re-add it here if a subscription appears.
+export const adapters: SourceAdapter[] = [aliexpress, amazon];

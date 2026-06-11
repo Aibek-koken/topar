@@ -34,6 +34,7 @@ async function main() {
 
       for (const [category, query] of Object.entries(QUERIES) as [Category, string][]) {
         let raw = readCache(adapter.marketplace, query);
+        const fromCache = raw !== null;
         if (raw === null) {
           if (cacheOnly) {
             console.warn(`[${adapter.marketplace}] no cache for "${query}", skipping`);
@@ -42,7 +43,6 @@ async function main() {
           if (quotaHit) continue;
           try {
             raw = await adapter.fetchRaw(query);
-            writeCache(adapter.marketplace, query, raw);
           } catch (err) {
             if (err instanceof QuotaError) {
               console.warn(`[${adapter.marketplace}] ${err.message} — skipping remaining queries`);
@@ -61,6 +61,9 @@ async function main() {
           console.warn(`[${adapter.marketplace}] "${query}" parse failed: ${(err as Error).message}`);
           continue;
         }
+        // Cache only responses that parsed cleanly, so transient upstream
+        // errors get retried on the next run instead of poisoning the cache.
+        if (!fromCache) writeCache(adapter.marketplace, query, raw);
         console.log(`[${adapter.marketplace}] ${category} "${query}": ${rows.length} products`);
         collected.push(...rows);
       }

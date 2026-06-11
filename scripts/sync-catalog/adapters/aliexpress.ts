@@ -9,6 +9,12 @@ export const aliexpress: SourceAdapter = {
   fetchRaw: (query) =>
     rapidApiGet(HOST, '/item_search_2', { q: query, page: '1', sort: 'salesDesc' }),
   parse(json: any): RawProduct[] {
+    // DataHub reports transient upstream failures inside a 200 response
+    // (e.g. code 5008 "data gather failed"). Throw so the orchestrator
+    // doesn't cache it and the next run retries the query.
+    if (json?.result?.status?.data === 'error') {
+      throw new Error(`DataHub error ${json.result.status.code}: ${JSON.stringify(json.result.status.msg)}`);
+    }
     const items: any[] = json?.result?.resultList ?? [];
     return items.map((entry) => {
       const item = entry?.item ?? entry;

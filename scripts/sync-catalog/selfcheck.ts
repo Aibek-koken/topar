@@ -55,6 +55,10 @@ assert.equal(readCache('selfcheck', 'never written'), null);
     productUrl: 'https://www.aliexpress.com/item/100500.html',
   });
   assert.deepEqual(aliexpress.parse({}), []); // missing/empty response is safe
+  assert.throws(
+    () => aliexpress.parse({ result: { status: { data: 'error', code: 5008, msg: { 'internal-error': 'x' } } } }),
+    /DataHub error 5008/
+  );
 }
 
 // --- amazon adapter -----------------------------------------------------------
