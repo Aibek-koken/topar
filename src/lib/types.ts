@@ -52,4 +52,6 @@ export interface Profile {
   language: Lang;
   esim_verified: boolean;
   onboarding_completed: boolean;
+  sim_carrier?: string | null;
+  sim_country?: string | null;
 }
