@@ -44,3 +44,6 @@ example
 
 # supabase credentials
 .env
+
+# catalog sync response cache
+scripts/.cache/
