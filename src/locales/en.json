@@ -62,7 +62,16 @@
     "verifiedSubtitle": "Your account is bound to this device's eSIM. Group purchases are protected from bots and fraud.",
     "modalTitle": "Purchase confirmation",
     "modalSubtitle": "Quick eSIM check before joining the group",
-    "concept": "Concept of a future integration — no real carrier connection"
+    "concept": "Concept of a future integration — no real carrier connection",
+    "phoneLabel": "Phone number",
+    "phoneHint": "For the demo use a whitelisted test number — the code is fixed, no SMS is sent",
+    "sendCode": "Send code",
+    "codeLabel": "Verification code for {{phone}}",
+    "confirmCode": "Confirm",
+    "changeNumber": "Change number",
+    "skip": "Skip for now",
+    "confirmedTitle": "Identity confirmed",
+    "confirmedSubtitle": "The number is linked to your account"
   },
   "tabs": {
     "home": "Home",
@@ -141,7 +150,12 @@
     "step3Text": "The app receives a signed token — no passwords, no SMS codes.",
     "step4Title": "Fair groups",
     "step4Text": "One person = one device = one seat in the group. Bots and manipulation excluded.",
-    "roadmap": "In the MVP this layer is shown conceptually. Real carrier integration is the product's next stage."
+    "roadmap": "In the MVP this layer is shown conceptually. Real carrier integration is the product's next stage.",
+    "statusTitle": "Identity status",
+    "statusNumber": "Number",
+    "statusCarrier": "SIM carrier",
+    "statusCountry": "SIM country",
+    "statusNotVerified": "Number not verified yet — complete the check in onboarding or when joining a group."
   },
   "countdown": {
     "d": "d",
