@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ColorValue } from 'react-native';
 import { colors } from '@/lib/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCatalogStore } from '@/store/useCatalogStore';
@@ -9,8 +10,8 @@ import { useCatalogStore } from '@/store/useCatalogStore';
 type IconName = keyof typeof Ionicons.glyphMap;
 
 function tabIcon(name: IconName, nameActive: IconName) {
-  return ({ color, focused }: { color: string; focused: boolean }) => (
-    <Ionicons name={focused ? nameActive : name} size={24} color={color} />
+  return ({ color, focused }: { color: ColorValue; focused: boolean }) => (
+    <Ionicons name={focused ? nameActive : name} size={24} color={color as string} />
   );
 }
 

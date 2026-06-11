@@ -1,56 +1,56 @@
-# Welcome to your Expo app 👋
+# Topar — покупаем вместе, платим меньше 🛍️
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Хакатонный MVP мобильной платформы коллективных покупок: агрегация товаров глобальных
+маркетплейсов (AliExpress / Amazon / Temu — mock-данные), персональная лента рекомендаций,
+групповые покупки с падением цены по тирам и концептуальный слой SIM/eSIM-идентификации.
 
-## Get started
+**Стек:** Expo SDK 56 (React Native, TypeScript, expo-router) · Supabase (auth, Postgres, Realtime) · Zustand · i18next (RU / KK / EN) · цены в ₸ KZT.
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Быстрый старт
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Сканируйте QR-код в **Expo Go** (iOS/Android) или нажмите `w` для веб-версии.
 
-### Other setup steps
+> **Без настройки Supabase приложение работает в офлайн-демо-режиме** на встроенных
+> mock-данных (36 товаров, 12 групп): полный путь регистрация → онбординг → лента →
+> группа → join работает локально. Realtime между устройствами в этом режиме не работает.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Подключение Supabase (для live-демо с двух телефонов)
 
-## Learn more
+1. Создайте бесплатный проект на [supabase.com](https://supabase.com).
+2. **Authentication → Sign In / Providers → Email → выключите "Confirm email"** (иначе регистрация на демо молча зависнет).
+3. SQL Editor → вставьте и выполните по очереди:
+   - `supabase/migrations/0001_schema.sql` (таблицы, триггер счётчика, RLS, Realtime)
+   - `supabase/seed.sql` (36 товаров, 12 групп; можно перезапускать перед демо — обновит дедлайны)
+4. Project Settings → API → скопируйте URL и anon key в `.env`:
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+   ```
+5. Перезапустите со сбросом кэша: `npx expo start -c` (env-переменные инлайнятся при старте бандлера).
 
-To learn more about developing your project with Expo, look at the following resources:
+## Сценарий демо (вау-момент)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Телефон A: открыть группу «Беспроводные наушники TWS Pro» — она засеяна на **9/10 участников**, тир −15% в одном шаге.
+2. Телефон B (второй аккаунт): нажать «Присоединиться» → пройти mock-проверку eSIM.
+3. На телефоне A **без обновления экрана**: счётчик 9 → 10, прогресс-бар анимируется, подсвеченный тир переключается и цена падает на глазах (Supabase Realtime).
+4. Перед выступлением перезапустите `seed.sql` — дедлайны снова станут свежими, счётчики вернутся к базовым.
 
-## Join the community
+## Что внутри
 
-Join our community of developers creating universal apps.
+- `src/app/` — экраны (expo-router): онбординг (интересы → бюджет → город → eSIM-верификация), табы (лента / группы / поиск / профиль), `product/[id]`, `group/[id]`.
+- `src/lib/recommendations.ts` — прозрачный скоринг: 0.40·интересы + 0.20·бюджет + 0.25·популярность + 0.15·активность группы.
+- `src/lib/groupBuy.ts` — чистая математика тиров (1 шт = розница, 10+ = −15%, 50+ = −30%).
+- `src/store/useCatalogStore.ts` — каталог + Realtime-подписка на `group_buys` (один UPDATE на join через триггер в Postgres).
+- `src/locales/` — полная локализация RU / KK / EN, включая русские плюралы («1 участник / 2 участника / 5 участников»).
+- eSIM-слой — **концепт по ТЗ**: mock-анимация верификации в онбординге и перед join, бейдж «Верифицирован через eSIM», экран-объяснение архитектуры (профиль → SIM-идентификация).
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Ограничения MVP (осознанные, по ТЗ хакатона)
+
+Mock-каталог вместо реальных API маркетплейсов · фиксированный курс 1 USD = 512 ₸ ·
+рекомендации — скоринг, не ML · eSIM — UI-концепт без интеграции с операторами ·
+оплата и логистика не реализованы.
