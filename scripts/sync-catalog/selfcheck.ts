@@ -5,6 +5,7 @@ import { aliexpress } from './adapters/aliexpress';
 import { amazon } from './adapters/amazon';
 import { temu } from './adapters/temu';
 import { readCache, writeCache } from './cache';
+import { normalize, slugify } from './normalize';
 import { httpsUrl, num, salesToNumber, str } from './parseUtils';
 
 // --- parseUtils -------------------------------------------------------------
@@ -107,6 +108,32 @@ assert.equal(readCache('selfcheck', 'never written'), null);
   assert.equal(rows[0].priceUsd, 13.9);
   assert.equal(rows[0].ordersCount, 2900);
   assert.deepEqual(temu.parse({}), []);
+}
+
+// --- normalize -----------------------------------------------------------------
+{
+  assert.equal(slugify('Great Thing!! 100% Cotton', 'AB12345'), 'great-thing-100-cotton-b12345');
+  assert.equal(slugify('???', 'X1'), 'product-x1');
+
+  const rows = normalize(
+    [
+      { externalId: 'A1', title: 'Great Thing', priceUsd: 10.456, rating: 4.92, ordersCount: 5.7, imageUrl: 'https://i/x.jpg', productUrl: null },
+      { externalId: 'A1', title: 'Duplicate id', priceUsd: 9, rating: 4, ordersCount: 1, imageUrl: 'https://i/y.jpg', productUrl: null },
+      { externalId: '', title: 'No id', priceUsd: 10, rating: 4, ordersCount: 5, imageUrl: 'https://i/x.jpg', productUrl: null },
+      { externalId: 'A2', title: 'No image', priceUsd: 10, rating: 4, ordersCount: 5, imageUrl: null, productUrl: null },
+      { externalId: 'A3', title: 'No price', priceUsd: null, rating: 4, ordersCount: 5, imageUrl: 'https://i/x.jpg', productUrl: null },
+    ],
+    'sports',
+    'temu'
+  );
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].slug, 'great-thing-a1');
+  assert.deepEqual(rows[0].title, { ru: 'Great Thing', en: 'Great Thing' });
+  assert.equal(rows[0].price_usd, 10.46);
+  assert.equal(rows[0].rating, 4.9);
+  assert.equal(rows[0].orders_count, 6);
+  assert.equal(rows[0].category, 'sports');
+  assert.equal(rows[0].marketplace, 'temu');
 }
 
 console.log('All checks passed');
