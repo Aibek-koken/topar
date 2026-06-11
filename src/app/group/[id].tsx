@@ -1,8 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { EmptyState } from '@/components/EmptyState';
@@ -14,19 +24,34 @@ import { TierProgressBar } from '@/components/TierProgressBar';
 import { formatKZT, formatKztAmount, usdToKzt } from '@/lib/currency';
 import { currentTier, discountedUsd, gapToNext, isExpired, nextTier } from '@/lib/groupBuy';
 import { lt } from '@/lib/i18n';
+import { localPriceKzt } from '@/lib/pricing';
+import { verifiedCount, VERIFIED_BONUS_PCT, withVerifiedBonusUsd } from '@/lib/trust';
 import { colors, radius, shadow, spacing } from '@/lib/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCatalogStore } from '@/store/useCatalogStore';
 
 export default function GroupBuyDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
   const router = useRouter();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.userId);
+  const profile = useAuthStore((s) => s.profile);
   const { groups, products, joinedIds, join, leave } = useCatalogStore();
 
   const [verifying, setVerifying] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [boosts, setBoosts] = useState(0);
+  const boostAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (boosts === 0) return;
+    boostAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(boostAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+      Animated.delay(1400),
+      Animated.timing(boostAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
+    ]).start();
+  }, [boosts, boostAnim]);
 
   // The store is updated live by the realtime subscription — this screen
   // re-renders on every participants_count tick automatically
@@ -60,6 +85,8 @@ export default function GroupBuyDetail() {
   const next = nextTier(group.tiers, group.participants_count);
   const gap = gapToNext(group.tiers, group.participants_count);
   const savingsKzt = usdToKzt(product.price_usd) - usdToKzt(priceNowUsd);
+  const localKzt = localPriceKzt(product);
+  const verified = verifiedCount(group);
 
   const handleJoinVerified = async () => {
     setVerifying(false);
@@ -68,6 +95,7 @@ export default function GroupBuyDetail() {
     const result = await join(group.id, userId);
     setBusy(false);
     if (result.error) Alert.alert('Topar', `${t('group.error')}: ${result.error}`);
+    else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
   const handleLeave = async () => {
@@ -75,6 +103,20 @@ export default function GroupBuyDetail() {
     setBusy(true);
     await leave(group.id, userId);
     setBusy(false);
+  };
+
+  const handleBoost = async () => {
+    const result = await Share.share({
+      message: t('boost.message', {
+        product: lt(product.title),
+        price: formatKZT(priceNowUsd),
+        link: `https://topar.app/group/${group.id}?ref=${userId ?? 'friend'}`,
+      }),
+    }).catch(() => null);
+    if (result?.action === Share.sharedAction) {
+      setBoosts((b) => b + 1);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }
   };
 
   return (
@@ -87,6 +129,12 @@ export default function GroupBuyDetail() {
           <Text style={styles.headerTitle}>{t('group.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
+
+        {!!ref && !joined && (
+          <View style={styles.invitedBanner}>
+            <Text style={styles.invitedText}>🎉 {t('boost.invited')}</Text>
+          </View>
+        )}
 
         <View style={styles.productRow}>
           <Image source={{ uri: product.image_url }} style={styles.image} transition={150} />
@@ -104,10 +152,25 @@ export default function GroupBuyDetail() {
             <Text style={styles.priceNow}>{formatKZT(priceNowUsd)}</Text>
             {savingsKzt > 0 && <Text style={styles.priceRetail}>{formatKZT(product.price_usd)}</Text>}
           </View>
+          <Text style={styles.localCompare}>
+            🏪 {t('savings.localPrice', { city: profile?.city ?? 'Алматы' })}{' '}
+            <Text style={styles.localCompareStruck}>{formatKztAmount(localKzt)}</Text>
+          </Text>
           {savingsKzt > 0 && (
             <Text style={styles.savings}>
               💰 {t('product.youSave', { amount: formatKztAmount(savingsKzt) })}
             </Text>
+          )}
+          {profile?.esim_verified && (
+            <View style={styles.bonusRow}>
+              <Ionicons name="shield-checkmark" size={15} color={colors.esim} />
+              <Text style={styles.bonusText}>
+                {t('trust.bonusPrice', {
+                  pct: VERIFIED_BONUS_PCT,
+                  price: formatKZT(withVerifiedBonusUsd(priceNowUsd)),
+                })}
+              </Text>
+            </View>
           )}
         </View>
 
@@ -118,16 +181,42 @@ export default function GroupBuyDetail() {
             </Text>
             <Text style={styles.target}>{t('group.target', { count: group.target_qty })}</Text>
           </View>
-          <TierProgressBar
-            participants={group.participants_count}
-            targetQty={group.target_qty}
-            tiers={group.tiers}
-          />
+          <View>
+            <TierProgressBar
+              participants={group.participants_count}
+              targetQty={group.target_qty}
+              tiers={group.tiers}
+            />
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.boostFloat,
+                {
+                  opacity: boostAnim,
+                  transform: [
+                    {
+                      translateY: boostAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [8, -14],
+                      }),
+                    },
+                  ],
+                },
+              ]}>
+              <Text style={styles.boostFloatText}>{t('boost.boosted')}</Text>
+            </Animated.View>
+          </View>
           <Text style={styles.gapText}>
             {next && gap
               ? t('group.gapToNext', { count: gap, pct: next.discount_pct })
               : `🎉 ${t('group.maxTier')}`}
           </Text>
+          <View style={styles.verifiedRow}>
+            <Ionicons name="shield-checkmark" size={15} color={colors.esim} />
+            <Text style={styles.verifiedText}>
+              {t('trust.verifiedCount', { verified, total: group.participants_count })}
+            </Text>
+          </View>
           <View style={styles.rowBetween}>
             <Text style={styles.deadlineLabel}>{t('group.deadline')}</Text>
             <CountdownTimer deadline={group.deadline} size={15} />
@@ -171,15 +260,32 @@ export default function GroupBuyDetail() {
       <View style={styles.footer}>
         {expired ? (
           <PrimaryButton title={t('group.completed')} disabled onPress={() => {}} />
-        ) : joined ? (
-          <PrimaryButton title={t('group.leave')} variant="outline" loading={busy} onPress={handleLeave} />
         ) : (
-          <PrimaryButton
-            title={t('group.join')}
-            variant="success"
-            loading={busy}
-            onPress={() => setVerifying(true)}
-          />
+          <View style={styles.footerRow}>
+            <View style={{ flex: 1 }}>
+              {joined ? (
+                <PrimaryButton
+                  title={t('group.leave')}
+                  variant="outline"
+                  loading={busy}
+                  onPress={handleLeave}
+                />
+              ) : (
+                <PrimaryButton
+                  title={t('group.join')}
+                  variant="success"
+                  loading={busy}
+                  onPress={() => setVerifying(true)}
+                />
+              )}
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.boostButton, pressed && { opacity: 0.8 }]}
+              onPress={handleBoost}>
+              <Ionicons name="rocket" size={20} color="#fff" />
+              <Text style={styles.boostButtonText}>{t('boost.button')}</Text>
+            </Pressable>
+          </View>
         )}
       </View>
 
@@ -273,4 +379,38 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
+  footerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  invitedBanner: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+  },
+  invitedText: { fontSize: 13.5, fontWeight: '700', color: colors.primaryDark, textAlign: 'center' },
+  localCompare: { fontSize: 13, color: colors.textSecondary },
+  localCompareStruck: { textDecorationLine: 'line-through', color: colors.textMuted },
+  bonusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.esimSoft,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+  },
+  bonusText: { fontSize: 12.5, fontWeight: '700', color: colors.esim },
+  verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  verifiedText: { fontSize: 13, fontWeight: '600', color: colors.esim },
+  boostFloat: { position: 'absolute', right: 0, top: -18 },
+  boostFloatText: { fontSize: 13, fontWeight: '900', color: colors.primary },
+  boostButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
+    height: 52,
+  },
+  boostButtonText: { color: '#fff', fontSize: 14, fontWeight: '800' },
 });

@@ -2,6 +2,7 @@ import '@/lib/i18n';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { TierCelebration } from '@/components/TierCelebration';
 import { colors } from '@/lib/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -21,6 +22,8 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.bg },
         }}
       />
+      {/* Global overlay: fires on any tier crossing, wherever the user is */}
+      <TierCelebration />
     </>
   );
 }

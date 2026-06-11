@@ -143,6 +143,64 @@
     "step4Text": "One person = one device = one seat in the group. Bots and manipulation excluded.",
     "roadmap": "In the MVP this layer is shown conceptually. Real carrier integration is the product's next stage."
   },
+  "match": {
+    "whyTitle": "Why this product?",
+    "whySubtitle": "Topar AI score based on your profile",
+    "interest": "Matches your interests",
+    "budget": "Fits your budget",
+    "popularity": "Rating & popularity",
+    "group": "Active group with a discount",
+    "hotInCity": "Trending in {{city}}",
+    "formula": "Scoring: interests 40% · budget 20% · popularity 25% · group 15% · city 5%"
+  },
+  "celebrate": {
+    "title": "Price dropped!",
+    "unlocked": "{{count}} participants — the group unlocked −{{pct}}%",
+    "saved": "{{amount}} saved for everyone",
+    "close": "Awesome!"
+  },
+  "pulse": {
+    "joined": "{{name}} · {{city}} — joined “{{product}}”"
+  },
+  "trust": {
+    "verifiedCount": "{{verified}} of {{total}} participants verified via eSIM",
+    "bonusPrice": "Your price with eSIM bonus −{{pct}}%: {{price}}",
+    "memberTitle": "Verified member",
+    "benefitEarly": "Early access to hot groups",
+    "benefitBonus": "Extra −{{pct}}% off in every group",
+    "benefitFair": "One person = one seat. No bots"
+  },
+  "savings": {
+    "passport": "Savings passport",
+    "vsLocal": "vs. store prices in {{city}}",
+    "empty": "Join a group to start saving",
+    "localPrice": "In local stores ({{city}})"
+  },
+  "boost": {
+    "button": "Boost",
+    "message": "Join my group on Topar: “{{product}}” for just {{price}} — the more of us, the lower the price! {{link}}",
+    "boosted": "+1 boost 🚀",
+    "invited": "A friend invited you to this group — join in!"
+  },
+  "dna": {
+    "analyzing": "AI is building your profile…",
+    "subtitle": "A personal shopping profile based on your answers",
+    "scanInterests": "Analyzing interests…",
+    "scanBudget": "Calibrating budget…",
+    "scanGroups": "Finding groups in {{city}}…",
+    "title": "Your Sauda DNA is ready",
+    "adjLow": "Smart",
+    "adjMid": "Balanced",
+    "adjHigh": "Premium",
+    "nounElectronics": "tech hunter",
+    "nounFashion": "style expert",
+    "nounHome": "home curator",
+    "nounBeauty": "beauty guru",
+    "nounSports": "deal champion",
+    "savingsLabel": "Projected yearly savings",
+    "savingsNote": "based on average group discounts of 15–30%",
+    "start": "Start shopping"
+  },
   "countdown": {
     "d": "d",
     "h": "h",

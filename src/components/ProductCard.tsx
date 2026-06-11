@@ -2,12 +2,14 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { formatKZT } from '@/lib/currency';
+import { formatKZT, formatKztAmount } from '@/lib/currency';
 import { bestTier, isExpired } from '@/lib/groupBuy';
 import { lt } from '@/lib/i18n';
+import { localPriceKzt } from '@/lib/pricing';
 import { colors, radius, shadow, spacing } from '@/lib/theme';
 import type { GroupBuy, Product } from '@/lib/types';
 import { MarketplaceBadge } from './MarketplaceBadge';
+import { MatchBadge } from './MatchBadge';
 
 interface Props {
   product: Product;
@@ -29,6 +31,9 @@ export function ProductCard({ product, group }: Props) {
         <View style={styles.badgeOverlay}>
           <MarketplaceBadge marketplace={product.marketplace} />
         </View>
+        <View style={styles.matchOverlay}>
+          <MatchBadge product={product} group={activeGroup} />
+        </View>
       </View>
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>
@@ -40,7 +45,12 @@ export function ProductCard({ product, group }: Props) {
             {t('product.orders', { count: product.orders_count })}
           </Text>
         </View>
-        <Text style={styles.price}>{formatKZT(product.price_usd)}</Text>
+        <View style={styles.priceRow}>
+          <Text style={styles.price}>{formatKZT(product.price_usd)}</Text>
+          <Text style={styles.localPrice} numberOfLines={1}>
+            {formatKztAmount(localPriceKzt(product))}
+          </Text>
+        </View>
         {activeGroup && (
           <View style={styles.groupPill}>
             <Text style={styles.groupPillText}>{t('home.groupPill', { pct: maxDiscount })}</Text>
@@ -61,12 +71,20 @@ const styles = StyleSheet.create({
   },
   image: { width: '100%', aspectRatio: 1, backgroundColor: colors.border },
   badgeOverlay: { position: 'absolute', top: spacing.sm, left: spacing.sm },
+  matchOverlay: { position: 'absolute', top: spacing.sm, right: spacing.sm },
   body: { padding: spacing.md, gap: 4 },
   title: { fontSize: 13.5, fontWeight: '600', color: colors.text, minHeight: 36 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   rating: { fontSize: 12, color: colors.warning, fontWeight: '700' },
   orders: { fontSize: 12, color: colors.textMuted, flexShrink: 1 },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   price: { fontSize: 16, fontWeight: '800', color: colors.text },
+  localPrice: {
+    fontSize: 11.5,
+    color: colors.textMuted,
+    textDecorationLine: 'line-through',
+    flexShrink: 1,
+  },
   groupPill: {
     backgroundColor: colors.successSoft,
     borderRadius: radius.full,
