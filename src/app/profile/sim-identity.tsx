@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { maskPhone } from '@/lib/sim';
 import { colors, radius, shadow, spacing } from '@/lib/theme';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const STEPS = [
   { icon: 'hardware-chip-outline', titleKey: 'sim.step1Title', textKey: 'sim.step1Text' },
@@ -15,6 +17,9 @@ const STEPS = [
 export default function SimIdentity() {
   const router = useRouter();
   const { t } = useTranslation();
+  const profile = useAuthStore((s) => s.profile);
+  const verifiedPhone = useAuthStore((s) => s.verifiedPhone);
+  const verified = !!profile?.esim_verified;
 
   return (
     <ScreenContainer>
@@ -31,6 +36,37 @@ export default function SimIdentity() {
           <Ionicons name="shield-checkmark" size={40} color={colors.esim} />
         </View>
         <Text style={styles.intro}>{t('sim.intro')}</Text>
+
+        <View style={styles.statusCard}>
+          <View style={styles.statusHeader}>
+            <Ionicons
+              name={verified ? 'shield-checkmark' : 'shield-outline'}
+              size={20}
+              color={verified ? colors.success : colors.textMuted}
+            />
+            <Text style={styles.statusTitle}>{t('sim.statusTitle')}</Text>
+          </View>
+          {verified ? (
+            <>
+              {verifiedPhone && (
+                <View style={styles.statusRow}>
+                  <Text style={styles.statusLabel}>{t('sim.statusNumber')}</Text>
+                  <Text style={styles.statusValue}>{maskPhone(verifiedPhone)}</Text>
+                </View>
+              )}
+              <View style={styles.statusRow}>
+                <Text style={styles.statusLabel}>{t('sim.statusCarrier')}</Text>
+                <Text style={styles.statusValue}>{profile?.sim_carrier ?? '—'}</Text>
+              </View>
+              <View style={styles.statusRow}>
+                <Text style={styles.statusLabel}>{t('sim.statusCountry')}</Text>
+                <Text style={styles.statusValue}>{profile?.sim_country ?? '—'}</Text>
+              </View>
+            </>
+          ) : (
+            <Text style={styles.statusEmpty}>{t('sim.statusNotVerified')}</Text>
+          )}
+        </View>
 
         {STEPS.map(({ icon, titleKey, textKey }, i) => (
           <View key={titleKey} style={styles.card}>
@@ -118,5 +154,18 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     alignItems: 'flex-start',
   },
+  statusCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    ...shadow.card,
+  },
+  statusHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  statusTitle: { fontSize: 15, fontWeight: '800', color: colors.text },
+  statusRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  statusLabel: { fontSize: 13.5, color: colors.textSecondary },
+  statusValue: { fontSize: 13.5, fontWeight: '700', color: colors.text },
+  statusEmpty: { fontSize: 13.5, color: colors.textSecondary, lineHeight: 19 },
   roadmapText: { flex: 1, fontSize: 12.5, color: colors.textSecondary, lineHeight: 18 },
 });
