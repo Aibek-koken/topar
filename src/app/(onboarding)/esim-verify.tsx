@@ -16,7 +16,9 @@ export default function EsimVerify() {
   const router = useRouter();
   const { t } = useTranslation();
   const updateProfile = useAuthStore((s) => s.updateProfile);
-  const [done, setDone] = useState(false);
+  // 'form' -> OTP form; 'animating' -> eSIM connection animation; 'done' -> finished
+  const [phase, setPhase] = useState<'form' | 'animating' | 'done'>('form');
+  const done = phase === 'done';
 
   // Writes onboarding data. esim_verified is NOT set here in Supabase mode:
   // confirmPhoneOtp already set it true; skipping leaves it untouched (false
@@ -39,12 +41,17 @@ export default function EsimVerify() {
   // Mock mode: the staged animation marks verified, as before.
   const finishMockVerification = useCallback(async () => {
     await completeOnboarding({ esim_verified: true });
-    setDone(true);
+    setPhase('done');
   }, [completeOnboarding]);
 
-  const handleVerified = useCallback(async () => {
+  // Real OTP confirmed -> play the eSIM connection animation as the payoff.
+  const handleVerified = useCallback(() => {
+    setPhase('animating');
+  }, []);
+
+  const handleAnimationDone = useCallback(async () => {
     await completeOnboarding();
-    setDone(true);
+    setPhase('done');
   }, [completeOnboarding]);
 
   const handleSkip = useCallback(async () => {
@@ -63,14 +70,18 @@ export default function EsimVerify() {
           <View style={styles.checklist}>
             <EsimChecklist onDone={finishMockVerification} />
           </View>
-        ) : done ? null : (
+        ) : phase === 'form' ? (
           <View style={styles.form}>
             <PhoneVerifyForm onVerified={handleVerified} />
             <Text style={styles.skip} onPress={handleSkip}>
               {t('esim.skip')}
             </Text>
           </View>
-        )}
+        ) : phase === 'animating' ? (
+          <View style={styles.checklist}>
+            <EsimChecklist onDone={handleAnimationDone} />
+          </View>
+        ) : null}
 
         {done && (
           <View style={styles.doneBlock}>

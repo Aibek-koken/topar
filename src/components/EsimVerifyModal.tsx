@@ -1,5 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { maskPhone } from '@/lib/sim';
@@ -14,12 +13,11 @@ interface Props {
   onVerified: () => void;
 }
 
-const CONFIRMED_AUTOCLOSE_MS = 1400;
-
 /**
  * Pre-join identity check. Mock mode: staged animation (unchanged).
- * Supabase mode: already verified -> brief confirmed card, then proceeds;
- * not verified -> inline phone OTP form.
+ * Supabase mode: already verified -> the eSIM connection animation plays as a
+ * re-check, then proceeds; not verified -> inline phone OTP form, and the
+ * animation plays after a successful confirmation.
  */
 export function EsimVerifyModal({ visible, onVerified }: Props) {
   const { t } = useTranslation();
@@ -27,14 +25,13 @@ export function EsimVerifyModal({ visible, onVerified }: Props) {
   const verifiedPhone = useAuthStore((s) => s.verifiedPhone);
   const alreadyVerified = isSupabaseConfigured && !!profile?.esim_verified;
 
-  const onVerifiedRef = useRef(onVerified);
-  onVerifiedRef.current = onVerified;
-
+  // Set after the inline OTP succeeds, so the animation plays as the finale.
+  const [justVerified, setJustVerified] = useState(false);
   useEffect(() => {
-    if (!visible || !alreadyVerified) return;
-    const tm = setTimeout(() => onVerifiedRef.current(), CONFIRMED_AUTOCLOSE_MS);
-    return () => clearTimeout(tm);
-  }, [visible, alreadyVerified]);
+    if (!visible) setJustVerified(false);
+  }, [visible]);
+
+  const showChecklist = !isSupabaseConfigured || alreadyVerified || justVerified;
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -43,19 +40,17 @@ export function EsimVerifyModal({ visible, onVerified }: Props) {
           <Text style={styles.title}>{t('esim.modalTitle')}</Text>
           <Text style={styles.subtitle}>{t('esim.modalSubtitle')}</Text>
 
-          {!isSupabaseConfigured ? (
-            visible && <EsimChecklist onDone={onVerified} />
-          ) : alreadyVerified ? (
-            <View style={styles.confirmed}>
-              <View style={styles.confirmedIcon}>
-                <Ionicons name="shield-checkmark" size={36} color={colors.success} />
+          {showChecklist ? (
+            visible && (
+              <View style={styles.checklistWrap}>
+                <EsimChecklist onDone={onVerified} />
+                {isSupabaseConfigured && verifiedPhone && (
+                  <Text style={styles.phone}>{maskPhone(verifiedPhone)}</Text>
+                )}
               </View>
-              <Text style={styles.confirmedTitle}>{t('esim.confirmedTitle')}</Text>
-              {verifiedPhone && <Text style={styles.confirmedPhone}>{maskPhone(verifiedPhone)}</Text>}
-              {profile?.sim_carrier && <Text style={styles.confirmedMeta}>{profile.sim_carrier}</Text>}
-            </View>
+            )
           ) : (
-            <PhoneVerifyForm onVerified={onVerified} />
+            <PhoneVerifyForm onVerified={() => setJustVerified(true)} />
           )}
 
           <Text style={styles.concept}>{t('esim.concept')}</Text>
@@ -82,17 +77,7 @@ const styles = StyleSheet.create({
   },
   title: { ...typography.h2, textAlign: 'center' },
   subtitle: { ...typography.caption, textAlign: 'center' },
-  confirmed: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md },
-  confirmedIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.successSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmedTitle: { fontSize: 16, fontWeight: '800', color: colors.success },
-  confirmedPhone: { fontSize: 15, fontWeight: '700', color: colors.text },
-  confirmedMeta: { fontSize: 13, color: colors.textSecondary },
+  checklistWrap: { gap: spacing.md },
+  phone: { fontSize: 14, fontWeight: '700', color: colors.textSecondary, textAlign: 'center' },
   concept: { fontSize: 11, color: colors.textMuted, textAlign: 'center' },
 });
