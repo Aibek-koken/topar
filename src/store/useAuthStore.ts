@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { getSimInfo } from '@/lib/sim';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
 
@@ -24,11 +25,15 @@ interface AuthState {
   status: AuthStatus;
   userId: string | null;
   profile: Profile | null;
+  /** E.164-ish verified phone (+7701...) when auth.users has a confirmed phone. */
+  verifiedPhone: string | null;
   init: () => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<{ error?: string }>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   updateProfile: (patch: Partial<Profile>) => Promise<void>;
+  requestPhoneOtp: (phone: string) => Promise<{ error?: string }>;
+  confirmPhoneOtp: (phone: string, code: string) => Promise<{ error?: string }>;
 }
 
 async function loadSupabaseProfile(userId: string): Promise<Profile | null> {
@@ -40,6 +45,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   status: 'loading',
   userId: null,
   profile: null,
+  verifiedPhone: null,
 
   init: async () => {
     if (!isSupabaseConfigured) {
@@ -57,14 +63,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const session = data.session;
     if (session) {
       const profile = await loadSupabaseProfile(session.user.id);
-      set({ status: 'signedIn', userId: session.user.id, profile });
+      const u = session.user;
+      set({
+        status: 'signedIn',
+        userId: u.id,
+        profile,
+        verifiedPhone:
+          u.phone && u.phone_confirmed_at ? `+${u.phone.replace(/^\+/, '')}` : null,
+      });
     } else {
       set({ status: 'signedOut' });
     }
 
     supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!newSession) {
-        set({ status: 'signedOut', userId: null, profile: null });
+        set({ status: 'signedOut', userId: null, profile: null, verifiedPhone: null });
       }
     });
   },
@@ -120,7 +133,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } else {
       await supabase.auth.signOut();
     }
-    set({ status: 'signedOut', userId: null, profile: null });
+    set({ status: 'signedOut', userId: null, profile: null, verifiedPhone: null });
   },
 
   updateProfile: async (patch) => {
@@ -133,5 +146,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
     await supabase.from('profiles').update(patch).eq('id', userId);
+  },
+
+  requestPhoneOtp: async (phone) => {
+    if (!isSupabaseConfigured) return {}; // mock mode: UI never reaches here, accept silently
+    const { error } = await supabase.auth.updateUser({ phone });
+    if (error) return { error: error.message };
+    return {};
+  },
+
+  confirmPhoneOtp: async (phone, code) => {
+    if (!isSupabaseConfigured) {
+      set({ verifiedPhone: phone });
+      await get().updateProfile({ esim_verified: true });
+      return {};
+    }
+    const { error } = await supabase.auth.verifyOtp({ phone, token: code, type: 'phone_change' });
+    if (error) return { error: error.message };
+    const sim = await getSimInfo();
+    set({ verifiedPhone: phone });
+    await get().updateProfile({
+      esim_verified: true,
+      sim_carrier: sim.carrier,
+      sim_country: sim.country,
+    });
+    return {};
   },
 }));
