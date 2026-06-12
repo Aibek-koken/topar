@@ -50,7 +50,12 @@ export function EsimVerifyModal({ visible, onVerified }: Props) {
               </View>
             )
           ) : (
-            <PhoneVerifyForm onVerified={() => setJustVerified(true)} />
+            <>
+              <PhoneVerifyForm onVerified={() => setJustVerified(true)} />
+              <Text style={styles.skip} onPress={onVerified}>
+                {t('esim.skip')}
+              </Text>
+            </>
           )}
 
           <Text style={styles.concept}>{t('esim.concept')}</Text>
@@ -79,5 +84,12 @@ const styles = StyleSheet.create({
   subtitle: { ...typography.caption, textAlign: 'center' },
   checklistWrap: { gap: spacing.md },
   phone: { fontSize: 14, fontWeight: '700', color: colors.textSecondary, textAlign: 'center' },
+  skip: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingVertical: spacing.xs,
+  },
   concept: { fontSize: 11, color: colors.textMuted, textAlign: 'center' },
 });
