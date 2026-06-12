@@ -155,6 +155,16 @@ export default function GroupChat() {
               placeholderTextColor={colors.textMuted}
               multiline
               maxLength={500}
+              onKeyPress={(e) => {
+                // Web/physical keyboards: Enter sends, Shift+Enter inserts a newline.
+                // Mobile software keyboards keep return = newline + the send button.
+                if (Platform.OS !== 'web') return;
+                const ne = e.nativeEvent as { key?: string; shiftKey?: boolean };
+                if (ne.key === 'Enter' && !ne.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
             />
             <Pressable
               style={[styles.sendBtn, (!draft.trim() || sending) && styles.sendBtnDisabled]}
