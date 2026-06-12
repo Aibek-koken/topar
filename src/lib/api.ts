@@ -159,6 +159,31 @@ export async function fetchMessages(groupId: string): Promise<GroupMessage[]> {
   return (data ?? []) as GroupMessage[];
 }
 
+export interface AssistantAnswer {
+  reply: string;
+  product_ids: string[];
+}
+
+export async function askAssistant(
+  query: string,
+  locale: string
+): Promise<{ data?: AssistantAnswer; error?: string }> {
+  if (!isSupabaseConfigured) {
+    // Offline demo: top popular products; UI substitutes a localized canned reply
+    const ids = [...MOCK_PRODUCTS]
+      .sort((a, b) => b.orders_count - a.orders_count)
+      .slice(0, 4)
+      .map((p) => p.id);
+    return { data: { reply: '', product_ids: ids } };
+  }
+  const { data, error } = await supabase.functions.invoke('assistant', {
+    body: { query, locale },
+  });
+  if (error) return { error: error.message };
+  if (data?.error) return { error: String(data.error) };
+  return { data: data as AssistantAnswer };
+}
+
 export async function sendMessage(
   groupId: string,
   userId: string,

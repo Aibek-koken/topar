@@ -34,7 +34,15 @@
     "invalidPhone": "Check the number format — e.g. +77011234567",
     "invalidCredentials": "Wrong email or password",
     "emailTaken": "An account with this email already exists — try signing in",
-    "network": "No connection. Check your internet and try again"
+    "network": "No connection. Check your internet and try again",
+    "aiUnavailable": "Topar AI is temporarily unavailable — try again"
+  },
+  "ai": {
+    "placeholder": "Ask: a gift for mom under 10,000 ₸",
+    "ask": "Ask",
+    "thinking": "Topar AI is picking products…",
+    "mockReply": "Demo mode: here are the most popular products. Connect Supabase for live AI.",
+    "empty": "Describe what you're looking for — Topar AI will pick products and discounted groups"
   },
   "onboarding": {
     "step": "Step {{current}} of {{total}}",
