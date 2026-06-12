@@ -127,7 +127,9 @@ export default function GroupBuyDetail() {
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>{t('group.title')}</Text>
-          <View style={{ width: 40 }} />
+          <Pressable style={styles.back} onPress={() => router.push(`/group/${group.id}/chat`)}>
+            <Ionicons name="chatbubbles-outline" size={22} color={colors.text} />
+          </Pressable>
         </View>
 
         {!!ref && !joined && (

@@ -133,6 +133,14 @@
     "all": "All",
     "noResults": "Nothing found"
   },
+  "chat": {
+    "title": "Group chat",
+    "placeholder": "Message…",
+    "joined": "{{name}} joined the group",
+    "someone": "Someone",
+    "joinToChat": "Join the group to chat",
+    "empty": "Quiet so far — be the first!"
+  },
   "profile": {
     "verified": "Verified via eSIM",
     "notVerified": "Not verified",
