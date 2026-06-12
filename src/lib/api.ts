@@ -1,6 +1,6 @@
-import { MOCK_GROUP_BUYS, MOCK_PRODUCTS } from './mockData';
+import { MOCK_GROUP_BUYS, MOCK_MESSAGES, MOCK_PRODUCTS } from './mockData';
 import { isSupabaseConfigured, supabase } from './supabase';
-import type { GroupBuy, Product } from './types';
+import type { GroupBuy, GroupMessage, Product } from './types';
 
 // ---------------------------------------------------------------------------
 // Mock mode: in-memory DB with listeners so join/leave still feels live when
@@ -10,6 +10,8 @@ import type { GroupBuy, Product } from './types';
 class MockDb {
   groups: GroupBuy[] = MOCK_GROUP_BUYS.map((g) => ({ ...g }));
   joined = new Set<string>();
+  private messages: GroupMessage[] = MOCK_MESSAGES.map((m) => ({ ...m }));
+  private msgSeq = 0;
   private listeners = new Set<() => void>();
 
   subscribe(fn: () => void): () => void {
@@ -26,6 +28,15 @@ class MockDb {
     if (!group || this.joined.has(groupId)) return;
     group.participants_count += 1;
     this.joined.add(groupId);
+    this.messages.push({
+      id: `local-${++this.msgSeq}`,
+      group_buy_id: groupId,
+      user_id: null,
+      display_name: '',
+      kind: 'join',
+      body: null,
+      created_at: new Date().toISOString(),
+    });
     this.emit();
   }
 
@@ -34,6 +45,23 @@ class MockDb {
     if (!group || !this.joined.has(groupId)) return;
     group.participants_count = Math.max(0, group.participants_count - 1);
     this.joined.delete(groupId);
+    this.emit();
+  }
+
+  getMessages(groupId: string): GroupMessage[] {
+    return this.messages.filter((m) => m.group_buy_id === groupId).map((m) => ({ ...m }));
+  }
+
+  sendMessage(groupId: string, displayName: string, body: string) {
+    this.messages.push({
+      id: `local-${++this.msgSeq}`,
+      group_buy_id: groupId,
+      user_id: 'mock-user',
+      display_name: displayName,
+      kind: 'text',
+      body,
+      created_at: new Date().toISOString(),
+    });
     this.emit();
   }
 }
@@ -116,6 +144,38 @@ export async function leaveGroup(groupId: string, userId: string): Promise<{ err
     .delete()
     .eq('group_buy_id', groupId)
     .eq('user_id', userId);
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function fetchMessages(groupId: string): Promise<GroupMessage[]> {
+  if (!isSupabaseConfigured) return mockDb.getMessages(groupId);
+  const { data, error } = await supabase
+    .from('group_messages')
+    .select('*')
+    .eq('group_buy_id', groupId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as GroupMessage[];
+}
+
+export async function sendMessage(
+  groupId: string,
+  userId: string,
+  displayName: string,
+  body: string
+): Promise<{ error?: string }> {
+  if (!isSupabaseConfigured) {
+    mockDb.sendMessage(groupId, displayName, body);
+    return {};
+  }
+  const { error } = await supabase.from('group_messages').insert({
+    group_buy_id: groupId,
+    user_id: userId,
+    display_name: displayName,
+    kind: 'text',
+    body,
+  });
   if (error) return { error: error.message };
   return {};
 }

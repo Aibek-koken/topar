@@ -55,3 +55,15 @@ export interface Profile {
   sim_carrier?: string | null;
   sim_country?: string | null;
 }
+
+export type GroupMessageKind = 'text' | 'join';
+
+export interface GroupMessage {
+  id: string;
+  group_buy_id: string;
+  user_id: string | null;
+  display_name: string;
+  kind: GroupMessageKind;
+  body: string | null;
+  created_at: string;
+}

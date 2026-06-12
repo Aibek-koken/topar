@@ -1,4 +1,4 @@
-import type { Category, GroupBuy, Marketplace, Product, Tier } from './types';
+import type { Category, GroupBuy, GroupMessage, Marketplace, Product, Tier } from './types';
 
 // Real product photography (Unsplash CDN, IDs verified to resolve) — the
 // catalog must not look like a placeholder template on stage
@@ -164,3 +164,34 @@ export const MOCK_GROUP_BUYS: GroupBuy[] = SEED_GROUPS.map((g) => ({
   status: g.status ?? 'active',
   product: MOCK_PRODUCTS.find((p) => p.id === g.slug),
 }));
+
+// Chat looks alive in demo groups even without Supabase
+export const MOCK_MESSAGES: GroupMessage[] = [
+  {
+    id: 'mock-msg-1',
+    group_buy_id: 'gb-wireless-earbuds',
+    user_id: null,
+    display_name: 'Айжан',
+    kind: 'text',
+    body: 'Берём! Осталась пара мест 🔥',
+    created_at: new Date(now - 30 * 60_000).toISOString(),
+  },
+  {
+    id: 'mock-msg-2',
+    group_buy_id: 'gb-wireless-earbuds',
+    user_id: null,
+    display_name: 'Дамир',
+    kind: 'text',
+    body: 'Цена огонь, в магазине вдвое дороже',
+    created_at: new Date(now - 12 * 60_000).toISOString(),
+  },
+  {
+    id: 'mock-msg-3',
+    group_buy_id: 'gb-smart-watch',
+    user_id: null,
+    display_name: 'Алия',
+    kind: 'text',
+    body: 'Жду эту цену месяц 😍',
+    created_at: new Date(now - 45 * 60_000).toISOString(),
+  },
+];
