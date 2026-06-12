@@ -11,6 +11,7 @@ export const colors = {
   textMuted: '#9CA0AC',
   border: '#ECEAE4',
   danger: '#DC2626',
+  dangerSoft: '#FDECEC',
   warning: '#D97706',
   esim: '#2563EB',
   esimSoft: '#EBF1FE',

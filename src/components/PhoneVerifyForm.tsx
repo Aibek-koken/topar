@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { authErrorKey } from '@/lib/authErrors';
 import { colors, radius, spacing } from '@/lib/theme';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ErrorBanner } from './ErrorBanner';
 import { PrimaryButton } from './PrimaryButton';
 
 interface Props {
@@ -30,7 +32,7 @@ export function PhoneVerifyForm({ onVerified }: Props) {
     const { error: err } = await requestPhoneOtp(phone.trim());
     setBusy(false);
     if (err) {
-      setError(err);
+      setError(t(authErrorKey(err)));
       return;
     }
     setStep('code');
@@ -42,7 +44,8 @@ export function PhoneVerifyForm({ onVerified }: Props) {
     const { error: err } = await confirmPhoneOtp(phone.trim(), code.trim());
     setBusy(false);
     if (err) {
-      setError(err);
+      setError(t(authErrorKey(err)));
+      setCode(''); // clear for a fresh retry
       return;
     }
     onVerified();
@@ -63,7 +66,7 @@ export function PhoneVerifyForm({ onVerified }: Props) {
             placeholderTextColor={colors.textMuted}
           />
           <Text style={styles.hint}>{t('esim.phoneHint')}</Text>
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorBanner message={error} />}
           <PrimaryButton
             title={t('esim.sendCode')}
             loading={busy}
@@ -84,7 +87,7 @@ export function PhoneVerifyForm({ onVerified }: Props) {
             placeholder="••••••"
             placeholderTextColor={colors.textMuted}
           />
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorBanner message={error} />}
           <PrimaryButton
             title={t('esim.confirmCode')}
             loading={busy}
@@ -119,7 +122,6 @@ const styles = StyleSheet.create({
   },
   codeInput: { textAlign: 'center', letterSpacing: 8, fontWeight: '800' },
   hint: { fontSize: 12.5, color: colors.textMuted, lineHeight: 18 },
-  error: { fontSize: 13, color: colors.danger },
   link: {
     fontSize: 14,
     fontWeight: '700',

@@ -27,6 +27,15 @@
     "fillAll": "Please fill in all fields",
     "passwordHint": "At least 6 characters"
   },
+  "errors": {
+    "invalidCode": "Wrong or expired code. Check the digits and try again",
+    "smsFailed": "Couldn't send a code to this number. For the demo use a whitelisted test number",
+    "rateLimit": "Too many attempts. Wait a minute and try again",
+    "invalidPhone": "Check the number format — e.g. +77011234567",
+    "invalidCredentials": "Wrong email or password",
+    "emailTaken": "An account with this email already exists — try signing in",
+    "network": "No connection. Check your internet and try again"
+  },
   "onboarding": {
     "step": "Step {{current}} of {{total}}",
     "interestsTitle": "What are you into?",

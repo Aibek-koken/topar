@@ -10,8 +10,10 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { ErrorBanner } from '@/components/ErrorBanner';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { authErrorKey } from '@/lib/authErrors';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -36,7 +38,7 @@ export default function SignUp() {
     const result = await signUp(email.trim(), password, name.trim());
     setLoading(false);
     if (result.error) {
-      setError(result.error);
+      setError(t(authErrorKey(result.error)));
     } else {
       router.replace('/(onboarding)/interests');
     }
@@ -76,7 +78,7 @@ export default function SignUp() {
             onChangeText={setPassword}
           />
 
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorBanner message={error} />}
 
           <PrimaryButton title={t('common.continue')} onPress={submit} loading={loading} />
           <Pressable onPress={() => router.replace('/(auth)/sign-in')}>
@@ -101,6 +103,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
-  error: { color: colors.danger, fontSize: 13 },
   link: { color: colors.primary, fontWeight: '600', textAlign: 'center', paddingVertical: spacing.sm },
 });
