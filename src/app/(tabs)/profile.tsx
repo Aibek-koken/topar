@@ -1,13 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/components/EmptyState';
 import { GroupBuyCard } from '@/components/GroupBuyCard';
+import { RollingNumber } from '@/components/RollingNumber';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { CATEGORIES } from '@/lib/constants';
+import { formatKztAmount } from '@/lib/currency';
+import { currentPriceUsd } from '@/lib/groupBuy';
+import { savedVsLocalKzt } from '@/lib/pricing';
+import { VERIFIED_BONUS_PCT } from '@/lib/trust';
 import { colors, radius, shadow, spacing } from '@/lib/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCatalogStore } from '@/store/useCatalogStore';
@@ -17,9 +23,21 @@ export default function Profile() {
   const { t } = useTranslation();
   const profile = useAuthStore((s) => s.profile);
   const signOut = useAuthStore((s) => s.signOut);
-  const { groups, joinedIds } = useCatalogStore();
+  const { groups, products, joinedIds } = useCatalogStore();
 
   const myGroups = useMemo(() => groups.filter((g) => joinedIds.has(g.id)), [groups, joinedIds]);
+
+  // Savings vs. local retail across all joined groups, at the current tier price
+  const totalSavedKzt = useMemo(
+    () =>
+      myGroups.reduce((sum, g) => {
+        const product = g.product ?? products.find((p) => p.id === g.product_id);
+        if (!product) return sum;
+        const paidUsd = currentPriceUsd(product.price_usd, g.tiers, g.participants_count);
+        return sum + savedVsLocalKzt(product, paidUsd);
+      }, 0),
+    [myGroups, products]
+  );
 
   const initials = (profile?.display_name ?? '?')
     .split(' ')
@@ -61,6 +79,42 @@ export default function Profile() {
           )}
         </View>
 
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.passport}>
+          <View style={styles.passportHeader}>
+            <Ionicons name="wallet-outline" size={18} color="#fff" />
+            <Text style={styles.passportTitle}>{t('savings.passport')}</Text>
+          </View>
+          <RollingNumber
+            value={totalSavedKzt}
+            format={(n) => formatKztAmount(n)}
+            style={styles.passportAmount}
+          />
+          <Text style={styles.passportSub}>
+            {totalSavedKzt > 0
+              ? t('savings.vsLocal', { city: profile?.city ?? 'Алматы' })
+              : t('savings.empty')}
+          </Text>
+        </LinearGradient>
+
+        {profile?.esim_verified && (
+          <View style={styles.trustCard}>
+            <View style={styles.trustHeader}>
+              <Ionicons name="shield-checkmark" size={20} color={colors.esim} />
+              <Text style={styles.trustTitle}>{t('trust.memberTitle')}</Text>
+            </View>
+            <TrustBenefit icon="flash-outline" text={t('trust.benefitEarly')} />
+            <TrustBenefit
+              icon="pricetag-outline"
+              text={t('trust.benefitBonus', { pct: VERIFIED_BONUS_PCT })}
+            />
+            <TrustBenefit icon="people-outline" text={t('trust.benefitFair')} />
+          </View>
+        )}
+
         <View style={styles.menu}>
           <MenuRow
             icon="language-outline"
@@ -87,6 +141,15 @@ export default function Profile() {
         )}
       </ScrollView>
     </ScreenContainer>
+  );
+}
+
+function TrustBenefit({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
+  return (
+    <View style={styles.benefitRow}>
+      <Ionicons name={icon} size={16} color={colors.esim} />
+      <Text style={styles.benefitText}>{text}</Text>
+    </View>
   );
 }
 
@@ -147,6 +210,32 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   interestText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
+  passport: {
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    gap: spacing.xs,
+    ...shadow.card,
+  },
+  passportHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  passportTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#fff',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  passportAmount: { fontSize: 34, fontWeight: '900', color: '#fff' },
+  passportSub: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
+  trustCard: {
+    backgroundColor: colors.esimSoft,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  trustHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  trustTitle: { fontSize: 15, fontWeight: '800', color: colors.esim },
+  benefitRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  benefitText: { fontSize: 13.5, color: colors.text, flex: 1 },
   menu: {
     backgroundColor: colors.card,
     borderRadius: radius.lg,

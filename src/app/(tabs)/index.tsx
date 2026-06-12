@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { GroupBuyCard } from '@/components/GroupBuyCard';
 import { ProductCard } from '@/components/ProductCard';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { ToparPulse } from '@/components/ToparPulse';
 import { isExpired, progress } from '@/lib/groupBuy';
 import { rankFeed } from '@/lib/recommendations';
 import { colors, spacing } from '@/lib/theme';
@@ -60,6 +61,7 @@ export default function Home() {
           <View style={styles.header}>
             <Text style={styles.greeting}>{t('home.greeting', { name: profile?.display_name ?? '' })}</Text>
             <Text style={styles.city}>📍 {t('home.deliveryTo', { city: profile?.city ?? 'Алматы' })}</Text>
+            <ToparPulse />
 
             {hotGroups.length > 0 && (
               <>

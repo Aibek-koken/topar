@@ -1,6 +1,52 @@
 import type { Category, GroupBuy, Marketplace, Product, Tier } from './types';
 
-const img = (slug: string) => `https://picsum.photos/seed/${slug}/600/600`;
+// Real product photography (Unsplash CDN, IDs verified to resolve) — the
+// catalog must not look like a placeholder template on stage
+const UNSPLASH_IDS: Record<string, string> = {
+  'wireless-earbuds': 'photo-1590658268037-6bf12165a8df',
+  'smart-watch': 'photo-1523275335684-37898b6baf30',
+  'power-bank-20000': 'photo-1619489646924-b4fce76b1db5',
+  'robot-vacuum': 'photo-1558317374-067fb5f30001',
+  'bt-speaker': 'photo-1608043152269-423dbba4e7e1',
+  'action-camera': 'photo-1564466809058-bf4114d55352',
+  'mini-projector': 'photo-1626379953822-baec19c3accd',
+  'phone-gimbal': 'photo-1512790182412-b19e6d62bc39',
+  'running-sneakers': 'photo-1542291026-7eec264c27ff',
+  'puffer-jacket': 'photo-1544923246-77307dd654cb',
+  'crossbody-bag': 'photo-1548036328-c9fa89d128fa',
+  'polar-sunglasses': 'photo-1572635196237-14b3f281503f',
+  'oversize-hoodie': 'photo-1556821840-3a63f95609a7',
+  'silk-scarf': 'photo-1601924994987-69e26d50dc26',
+  'leather-belt': 'photo-1624222247344-550fb60583dc',
+  'air-fryer': 'photo-1626074353765-517a681e40be',
+  'led-strip': 'photo-1550985616-10810253b84d',
+  'memory-pillow': 'photo-1584100936595-c0654b55a2e2',
+  'electric-kettle': 'photo-1594213114663-d94db9b17125',
+  'aroma-diffuser': 'photo-1602928298849-325cec8771c0',
+  'storage-organizer': 'photo-1584622650111-993a426fbf0a',
+  'fleece-blanket': 'photo-1600369671236-e74521d4b6ad',
+  'hair-dryer-brush': 'photo-1522338242992-e1a54906a8da',
+  'led-face-mask': 'photo-1570172619644-dfd03ed5d881',
+  'perfume-set': 'photo-1541643600914-78b084683601',
+  'skincare-set': 'photo-1556228720-195a672e8a03',
+  'nail-lamp-kit': 'photo-1604654894610-df63bc536371',
+  'jade-roller': 'photo-1571781926291-c477ebfd024b',
+  'electric-cleanser': 'photo-1570554886111-e80fcca6a029',
+  'yoga-mat': 'photo-1592432678016-e910b452f9a2',
+  'dumbbells-set': 'photo-1586401100295-7a8096fd231a',
+  'massage-gun': 'photo-1620188467120-5042ed1eb5da',
+  'resistance-bands': 'photo-1598289431512-b97b0917affc',
+  'thermo-bottle': 'photo-1602143407151-7111542de6e8',
+  'running-backpack': 'photo-1553062407-98eeb64c6a62',
+  'jump-rope-smart': 'photo-1434596922112-19c563067271',
+};
+
+const img = (slug: string) => {
+  const id = UNSPLASH_IDS[slug];
+  return id
+    ? `https://images.unsplash.com/${id}?w=600&q=80&auto=format&fit=crop`
+    : `https://picsum.photos/seed/${slug}/600/600`;
+};
 
 type SeedProduct = {
   slug: string;

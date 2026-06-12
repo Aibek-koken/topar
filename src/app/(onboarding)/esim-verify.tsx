@@ -95,7 +95,7 @@ export default function EsimVerify() {
         <PrimaryButton
           title={t('common.continue')}
           disabled={!done}
-          onPress={() => router.replace('/(tabs)')}
+          onPress={() => router.replace('./sauda-dna')}
         />
       </View>
     </ScreenContainer>

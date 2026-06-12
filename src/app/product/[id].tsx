@@ -13,7 +13,9 @@ import { TierProgressBar } from '@/components/TierProgressBar';
 import { formatKZT, formatKztAmount, usdToKzt } from '@/lib/currency';
 import { bestTier, discountedUsd, isExpired } from '@/lib/groupBuy';
 import { lt } from '@/lib/i18n';
+import { localPriceKzt } from '@/lib/pricing';
 import { colors, radius, shadow, spacing } from '@/lib/theme';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useCatalogStore } from '@/store/useCatalogStore';
 
 export default function ProductDetail() {
@@ -21,6 +23,7 @@ export default function ProductDetail() {
   const router = useRouter();
   const { t } = useTranslation();
   const { products, groups } = useCatalogStore();
+  const profile = useAuthStore((s) => s.profile);
 
   const product = products.find((p) => p.id === id);
   const group = useMemo(
@@ -62,6 +65,14 @@ export default function ProductDetail() {
           <Text style={styles.shipping}>✈️ {t('product.shipping')}</Text>
 
           <View style={styles.priceCard}>
+            <View style={styles.priceRowBetween}>
+              <Text style={styles.priceLabel}>
+                {t('savings.localPrice', { city: profile?.city ?? 'Алматы' })}
+              </Text>
+              <Text style={[styles.priceValue, styles.priceStruck]}>
+                {formatKztAmount(localPriceKzt(product))}
+              </Text>
+            </View>
             <View style={styles.priceRowBetween}>
               <Text style={styles.priceLabel}>{t('product.alonePrice')}</Text>
               <Text style={[styles.priceValue, group && styles.priceStruck]}>

@@ -10,6 +10,7 @@ import {
 } from '@/lib/api';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { GroupBuy, Product } from '@/lib/types';
+import { detectTierCross, useCelebrationStore } from './useCelebrationStore';
 
 interface CatalogState {
   products: Product[];
@@ -58,7 +59,11 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
       // gets its tick from the subscription on other devices
       const fresh = await fetchGroupBuy(groupId).catch(() => null);
       if (fresh) {
-        set({ groups: get().groups.map((g) => (g.id === groupId ? { ...g, ...fresh } : g)) });
+        const prev = get().groups;
+        const next = prev.map((g) => (g.id === groupId ? { ...g, ...fresh } : g));
+        const cross = detectTierCross(prev, next, get().products);
+        set({ groups: next });
+        if (cross) useCelebrationStore.getState().fire(cross);
       }
     }
     return result;
@@ -81,10 +86,11 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   subscribeLive: () => {
     if (!isSupabaseConfigured) {
       return mockDb.subscribe(() => {
-        set({
-          groups: mockDb.groups.map((g) => ({ ...g })),
-          joinedIds: new Set(mockDb.joined),
-        });
+        const prev = get().groups;
+        const next = mockDb.groups.map((g) => ({ ...g }));
+        const cross = detectTierCross(prev, next, get().products);
+        set({ groups: next, joinedIds: new Set(mockDb.joined) });
+        if (cross) useCelebrationStore.getState().fire(cross);
       });
     }
     const channel = supabase
@@ -94,9 +100,11 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
         { event: 'UPDATE', schema: 'public', table: 'group_buys' },
         (payload) => {
           const row = payload.new as Partial<GroupBuy> & { id: string };
-          set({
-            groups: get().groups.map((g) => (g.id === row.id ? { ...g, ...row, product: g.product } : g)),
-          });
+          const prev = get().groups;
+          const next = prev.map((g) => (g.id === row.id ? { ...g, ...row, product: g.product } : g));
+          const cross = detectTierCross(prev, next, get().products);
+          set({ groups: next });
+          if (cross) useCelebrationStore.getState().fire(cross);
         }
       )
       .subscribe();
