@@ -7,6 +7,7 @@ import {
   joinGroup,
   leaveGroup,
   mockDb,
+  PRODUCTS_PAGE_SIZE,
 } from '@/lib/api';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { GroupBuy, Product } from '@/lib/types';
@@ -17,8 +18,14 @@ interface CatalogState {
   groups: GroupBuy[];
   joinedIds: Set<string>;
   loading: boolean;
+  loadingMore: boolean;
+  hasMoreProducts: boolean;
   error: string | null;
   load: () => Promise<void>;
+  /** Appends the next page of products (feed infinite scroll). */
+  loadMore: () => Promise<void>;
+  /** Loads the entire remaining catalog (search/filter needs the full set). */
+  loadAllProducts: () => Promise<void>;
   refreshJoined: (userId: string) => Promise<void>;
   join: (groupId: string, userId: string) => Promise<{ error?: string }>;
   leave: (groupId: string, userId: string) => Promise<{ error?: string }>;
@@ -31,15 +38,45 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   groups: [],
   joinedIds: new Set(),
   loading: true,
+  loadingMore: false,
+  hasMoreProducts: true,
   error: null,
 
   load: async () => {
     set({ loading: get().products.length === 0, error: null });
     try {
-      const [products, groups] = await Promise.all([fetchProducts(), fetchGroupBuys()]);
-      set({ products, groups, loading: false });
+      const [products, groups] = await Promise.all([fetchProducts(0), fetchGroupBuys()]);
+      set({
+        products,
+        groups,
+        loading: false,
+        hasMoreProducts: products.length === PRODUCTS_PAGE_SIZE,
+      });
     } catch (e) {
       set({ error: e instanceof Error ? e.message : String(e), loading: false });
+    }
+  },
+
+  loadMore: async () => {
+    const { loading, loadingMore, hasMoreProducts, products } = get();
+    if (loading || loadingMore || !hasMoreProducts) return;
+    set({ loadingMore: true });
+    try {
+      const page = await fetchProducts(products.length);
+      const seen = new Set(products.map((p) => p.id));
+      set({
+        products: [...products, ...page.filter((p) => !seen.has(p.id))],
+        hasMoreProducts: page.length === PRODUCTS_PAGE_SIZE,
+        loadingMore: false,
+      });
+    } catch {
+      set({ loadingMore: false }); // non-fatal: next scroll retries
+    }
+  },
+
+  loadAllProducts: async () => {
+    while (get().hasMoreProducts && !get().loadingMore) {
+      await get().loadMore();
     }
   },
 

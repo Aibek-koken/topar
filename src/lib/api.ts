@@ -44,9 +44,18 @@ export const mockDb = new MockDb();
 // Data access — every function works in both modes
 // ---------------------------------------------------------------------------
 
-export async function fetchProducts(): Promise<Product[]> {
-  if (!isSupabaseConfigured) return MOCK_PRODUCTS;
-  const { data, error } = await supabase.from('products').select('*').order('orders_count', { ascending: false });
+export const PRODUCTS_PAGE_SIZE = 20;
+
+export async function fetchProducts(
+  offset = 0,
+  limit = PRODUCTS_PAGE_SIZE
+): Promise<Product[]> {
+  if (!isSupabaseConfigured) return MOCK_PRODUCTS.slice(offset, offset + limit);
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .order('orders_count', { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) throw error;
   return (data ?? []) as Product[];
 }

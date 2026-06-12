@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CategoryChip } from '@/components/CategoryChip';
@@ -15,9 +15,15 @@ import { useCatalogStore } from '@/store/useCatalogStore';
 
 export default function Search() {
   const { t } = useTranslation();
-  const { products, groups } = useCatalogStore();
+  const { products, groups, loadAllProducts } = useCatalogStore();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category | null>(null);
+
+  // Searching/filtering must see the whole catalog, not just the pages the
+  // feed has scrolled through — pull the rest once a filter becomes active.
+  useEffect(() => {
+    if (query.trim() || category) loadAllProducts();
+  }, [query, category, loadAllProducts]);
 
   const groupsByProduct = useMemo(() => {
     const map = new Map<string, GroupBuy>();

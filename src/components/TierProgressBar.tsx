@@ -30,10 +30,13 @@ export function TierProgressBar({ participants, targetQty, tiers, compact }: Pro
       <View style={[styles.track, compact && styles.trackCompact]}>
         <Animated.View style={[styles.fill, { width }]} />
         {markers.map((tier) => {
-          const left = (tier.min_qty / targetQty) * 100;
+          const left = Math.min((tier.min_qty / targetQty) * 100, 100);
+          const atEnd = left >= 99.5; // pin to the edge so the dot never overflows the track
           const reached = participants >= tier.min_qty;
           return (
-            <View key={tier.min_qty} style={[styles.marker, { left: `${left}%` }]}>
+            <View
+              key={tier.min_qty}
+              style={[styles.marker, atEnd ? styles.markerEnd : { left: `${left}%` }]}>
               <View style={[styles.dot, reached && styles.dotReached]} />
             </View>
           );
@@ -42,12 +45,17 @@ export function TierProgressBar({ participants, targetQty, tiers, compact }: Pro
       {!compact && (
         <View style={styles.labels}>
           {markers.map((tier) => {
-            const left = (tier.min_qty / targetQty) * 100;
+            const left = Math.min((tier.min_qty / targetQty) * 100, 100);
+            const atEnd = left >= 99.5;
             const reached = participants >= tier.min_qty;
             return (
               <Text
                 key={tier.min_qty}
-                style={[styles.markerLabel, { left: `${left}%` }, reached && styles.markerLabelReached]}>
+                style={[
+                  styles.markerLabel,
+                  atEnd ? styles.markerLabelEnd : { left: `${left}%` },
+                  reached && styles.markerLabelReached,
+                ]}>
                 −{tier.discount_pct}%
               </Text>
             );
@@ -76,6 +84,7 @@ const styles = StyleSheet.create({
     top: -2,
     marginLeft: -7,
   },
+  markerEnd: { right: 0, marginLeft: 0 },
   dot: {
     width: 14,
     height: 14,
@@ -93,5 +102,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textMuted,
   },
+  markerLabelEnd: { right: 0, marginLeft: 0 },
   markerLabelReached: { color: colors.success },
 });

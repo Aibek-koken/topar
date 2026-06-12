@@ -1,11 +1,12 @@
 import { useMemo, useRef } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/components/EmptyState';
 import { GroupBuyCard } from '@/components/GroupBuyCard';
 import { ProductCard } from '@/components/ProductCard';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ToparPulse } from '@/components/ToparPulse';
+import { PRODUCTS_PAGE_SIZE } from '@/lib/api';
 import { isExpired, progress } from '@/lib/groupBuy';
 import { rankFeed } from '@/lib/recommendations';
 import { colors, spacing } from '@/lib/theme';
@@ -16,7 +17,7 @@ import { useCatalogStore } from '@/store/useCatalogStore';
 export default function Home() {
   const { t } = useTranslation();
   const profile = useAuthStore((s) => s.profile);
-  const { products, groups, joinedIds, loading, load } = useCatalogStore();
+  const { products, groups, joinedIds, loading, loadingMore, load, loadMore } = useCatalogStore();
 
   const groupsByProduct = useMemo(() => {
     const map = new Map<string, GroupBuy>();
@@ -27,11 +28,19 @@ export default function Home() {
   }, [groups]);
 
   // Rank only when products/profile change — realtime ticks must not reshuffle
-  // the feed mid-scroll, so the latest groups are read through a ref
+  // the feed mid-scroll, so the latest groups are read through a ref.
+  // Ranking runs per loaded page: a newly fetched page is ranked within itself
+  // and appended below, so items already on screen never jump around.
   const groupsRef = useRef(groupsByProduct);
   groupsRef.current = groupsByProduct;
   const ranked = useMemo(
-    () => rankFeed(products, profile, groupsRef.current),
+    () => {
+      const pages = [];
+      for (let i = 0; i < products.length; i += PRODUCTS_PAGE_SIZE) {
+        pages.push(products.slice(i, i + PRODUCTS_PAGE_SIZE));
+      }
+      return pages.flatMap((page) => rankFeed(page, profile, groupsRef.current));
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [products, profile?.interests, profile?.budget_tier]
   );
@@ -90,6 +99,11 @@ export default function Home() {
           </View>
         )}
         ListEmptyComponent={!loading ? <EmptyState emoji="🛍️" text={t('search.noResults')} /> : null}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.6}
+        ListFooterComponent={
+          loadingMore ? <ActivityIndicator style={styles.footerSpinner} color={colors.primary} /> : null
+        }
       />
     </ScreenContainer>
   );
@@ -105,4 +119,5 @@ const styles = StyleSheet.create({
   hotCard: { width: 320 },
   column: { gap: spacing.md },
   cell: { flex: 1 / 2, marginBottom: spacing.md },
+  footerSpinner: { paddingVertical: spacing.lg },
 });
