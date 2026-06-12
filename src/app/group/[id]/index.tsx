@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
+  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -106,13 +107,27 @@ export default function GroupBuyDetail() {
   };
 
   const handleBoost = async () => {
-    const result = await Share.share({
-      message: t('boost.message', {
-        product: lt(product.title),
-        price: formatKZT(priceNowUsd),
-        link: `https://topar.app/group/${group.id}?ref=${userId ?? 'friend'}`,
-      }),
-    }).catch(() => null);
+    const message = t('boost.message', {
+      product: lt(product.title),
+      price: formatKZT(priceNowUsd),
+      link: `https://topar.app/group/${group.id}?ref=${userId ?? 'friend'}`,
+    });
+
+    if (Platform.OS === 'web') {
+      // navigator.share is absent/flaky in desktop browsers — copy instead
+      const nav = (globalThis as {
+        navigator?: { clipboard?: { writeText(s: string): Promise<void> } };
+      }).navigator;
+      try {
+        await nav?.clipboard?.writeText(message);
+        setBoosts((b) => b + 1);
+      } catch {
+        // clipboard blocked (insecure context / permissions) — nothing to do
+      }
+      return;
+    }
+
+    const result = await Share.share({ message }).catch(() => null);
     if (result?.action === Share.sharedAction) {
       setBoosts((b) => b + 1);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -205,7 +220,9 @@ export default function GroupBuyDetail() {
                   ],
                 },
               ]}>
-              <Text style={styles.boostFloatText}>{t('boost.boosted')}</Text>
+              <Text style={styles.boostFloatText}>
+                {Platform.OS === 'web' ? t('boost.copied') : t('boost.boosted')}
+              </Text>
             </Animated.View>
           </View>
           <Text style={styles.gapText}>

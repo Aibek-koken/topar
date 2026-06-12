@@ -211,6 +211,7 @@
     "button": "Boost",
     "message": "Join my group on Topar: “{{product}}” for just {{price}} — the more of us, the lower the price! {{link}}",
     "boosted": "+1 boost 🚀",
+    "copied": "Invite copied 📋",
     "invited": "A friend invited you to this group — join in!"
   },
   "dna": {
