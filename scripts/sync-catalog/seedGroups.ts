@@ -38,11 +38,49 @@ export async function seedGroups(db: SupabaseClient, count: number): Promise<num
     };
   });
 
-  const ins = await db.from('group_buys').insert(rows);
+  const ins = await db.from('group_buys').insert(rows).select('id');
   if (ins.error) throw new Error(`inserting group_buys failed: ${ins.error.message}`);
+
+  await seedChat(db, (ins.data ?? []).map((g) => g.id as string));
 
   console.log(`Demo group (9 participants, one join to the -15% tier): ${picked[0].slug}`);
   return rows.length;
+}
+
+// A couple of demo groups get casual seed messages so chats never look dead
+// on stage. group_buys deletion cascades to group_messages, so re-running
+// the seeder refreshes chats too. Requires migration 0004_group_chat.sql.
+const SEED_CHAT: { name: string; body: string }[][] = [
+  [
+    { name: 'Айжан', body: 'Берём! Осталась пара мест 🔥' },
+    { name: 'Дамир', body: 'Кто из Алматы — заберу на всех с ПВЗ' },
+    { name: 'Алия', body: 'Цена огонь, в магазине вдвое дороже' },
+  ],
+  [
+    { name: 'Тимур', body: 'Жду эту цену месяц 😍' },
+    { name: 'Айжан', body: 'Зовите друзей, чуть-чуть до скидки!' },
+  ],
+];
+
+async function seedChat(db: SupabaseClient, groupIds: string[]) {
+  const rows = groupIds.slice(0, SEED_CHAT.length).flatMap((groupId, gi) =>
+    SEED_CHAT[gi].map((msg, mi) => ({
+      group_buy_id: groupId,
+      user_id: null,
+      display_name: msg.name,
+      kind: 'text',
+      body: msg.body,
+      created_at: new Date(Date.now() - (SEED_CHAT[gi].length - mi) * 600_000).toISOString(),
+    }))
+  );
+  if (rows.length === 0) return;
+  const { error } = await db.from('group_messages').insert(rows);
+  if (error) {
+    throw new Error(
+      `seeding chat failed: ${error.message} — did you run supabase/migrations/0004_group_chat.sql?`
+    );
+  }
+  console.log(`Seeded ${rows.length} chat messages`);
 }
 
 // Round-robin across categories, most popular first within each, so the
