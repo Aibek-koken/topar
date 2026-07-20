@@ -1,71 +1,81 @@
-# Topar — покупаем вместе, платим меньше 🛍️
+# Topar
 
-Хакатонный MVP мобильной платформы коллективных покупок: агрегация товаров глобальных
-маркетплейсов (AliExpress / Amazon / Temu — mock-данные), персональная лента рекомендаций,
-групповые покупки с падением цены по тирам и концептуальный слой SIM/eSIM-идентификации.
+Buy together, pay less — a hackathon MVP for a group-buying mobile marketplace.
+It aggregates products from global marketplaces (AliExpress, Amazon, Temu, as
+mock data), shows a personalized recommendation feed, and lets users join group
+buys whose price drops as more people join. It also includes a conceptual
+SIM/eSIM identity layer.
 
-**Стек:** Expo SDK 56 (React Native, TypeScript, expo-router) · Supabase (auth, Postgres, Realtime) · Zustand · i18next (RU / KK / EN) · цены в ₸ KZT.
+Status: hackathon MVP. It runs out of the box in an offline demo mode on bundled
+mock data; live cross-device features require a Supabase project (see below).
 
-## Быстрый старт
+## Stack
+
+Expo SDK 54 (React Native, TypeScript, expo-router) · Supabase (auth, Postgres,
+Realtime) · Zustand · i18next (RU / KK / EN) · prices in tenge (KZT).
+
+## Quick start
 
 ```bash
 npm install
 npx expo start
 ```
 
-Сканируйте QR-код в **Expo Go** (iOS/Android) или нажмите `w` для веб-версии.
+Scan the QR code in Expo Go (iOS/Android), or press `w` for the web build.
 
-> **Без настройки Supabase приложение работает в офлайн-демо-режиме** на встроенных
-> mock-данных (36 товаров, 12 групп): полный путь регистрация → онбординг → лента →
-> группа → join работает локально. Realtime между устройствами в этом режиме не работает.
+Without Supabase configured, the app runs in offline demo mode on bundled mock
+data (36 products, 12 groups): the full path register → onboarding → feed →
+group → join works locally. Realtime updates between devices do not work in this
+mode.
 
-## Подключение Supabase (для live-демо с двух телефонов)
+## Live demo with Supabase (two devices)
 
-1. Создайте бесплатный проект на [supabase.com](https://supabase.com).
-2. **Authentication → Sign In / Providers → Email → выключите "Confirm email"** (иначе регистрация на демо молча зависнет).
-3. SQL Editor → вставьте и выполните по очереди:
-   - `supabase/migrations/0001_schema.sql` (таблицы, триггер счётчика, RLS, Realtime)
-   - `supabase/seed.sql` (36 товаров, 12 групп; можно перезапускать перед демо — обновит дедлайны)
-4. Project Settings → API → скопируйте URL и anon key в `.env`:
+1. Create a free project at supabase.com.
+2. Authentication → Sign In / Providers → Email → turn off "Confirm email"
+   (otherwise demo sign-up silently hangs).
+3. In the SQL Editor, run in order:
+   - `supabase/migrations/0001_schema.sql` (tables, counter trigger, RLS, Realtime)
+   - `supabase/seed.sql` (36 products, 12 groups; re-runnable to refresh deadlines)
+4. Project Settings → API → copy the URL and anon key into `.env`:
    ```
    EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
    EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
    ```
-5. Перезапустите со сбросом кэша: `npx expo start -c` (env-переменные инлайнятся при старте бандлера).
+5. Restart with a clean cache: `npx expo start -c` (env vars are inlined when the
+   bundler starts).
 
-## Реальный каталог (опционально)
+## Optional: real catalog
 
-Вместо mock-каталога можно синхронизировать реальные товары с AliExpress / Amazon / Temu
-через агрегаторы RapidAPI:
+Instead of the mock catalog, products can be synced from AliExpress / Amazon /
+Temu via RapidAPI aggregators:
 
-1. Выполните в SQL Editor `supabase/migrations/0002_catalog_sync.sql`.
-2. Подпишитесь (free tier) на RapidAPI: AliExpress DataHub, Real-Time Amazon Data, Temu API.
-3. Добавьте в `.env`: `RAPIDAPI_KEY=...` и `SUPABASE_SERVICE_ROLE_KEY=...`
-   (без префикса `EXPO_PUBLIC_` — эти ключи не должны попадать в бандл приложения).
-4. `npm run sync-catalog` — зальёт ~150 товаров и пересеет 12 групп.
+1. Run `supabase/migrations/0002_catalog_sync.sql` in the SQL Editor.
+2. Subscribe (free tier) to the RapidAPI sources (AliExpress DataHub, Real-Time
+   Amazon Data, Temu API).
+3. Add `RAPIDAPI_KEY` and `SUPABASE_SERVICE_ROLE_KEY` to `.env` (no
+   `EXPO_PUBLIC_` prefix — these must not be bundled into the app).
+4. `npm run sync-catalog` loads ~150 products and reseeds the 12 groups.
 
-Полезные флаги: `--dry-run` (без записи в БД), `--source=cache` (без запросов к API,
-только дисковый кэш `scripts/.cache/`), `--seed-groups-only` (только пересеять группы —
-например, обновить дедлайны перед демо).
+Flags: `--dry-run` (no DB writes), `--source=cache` (disk cache only, no API
+calls), `--seed-groups-only` (reseed groups, for example to refresh deadlines).
 
-## Сценарий демо (вау-момент)
+## What's inside
 
-1. Телефон A: открыть группу «Беспроводные наушники TWS Pro» — она засеяна на **9/10 участников**, тир −15% в одном шаге.
-2. Телефон B (второй аккаунт): нажать «Присоединиться» → пройти mock-проверку eSIM.
-3. На телефоне A **без обновления экрана**: счётчик 9 → 10, прогресс-бар анимируется, подсвеченный тир переключается и цена падает на глазах (Supabase Realtime).
-4. Перед выступлением перезапустите `seed.sql` — дедлайны снова станут свежими, счётчики вернутся к базовым.
+- `src/app/` — screens (expo-router): onboarding (interests → budget → city →
+  eSIM verification), tabs (feed / groups / search / profile), `product/[id]`,
+  `group/[id]`.
+- `src/lib/recommendations.ts` — transparent scoring:
+  0.40·interests + 0.20·budget + 0.25·popularity + 0.15·group activity.
+- `src/lib/groupBuy.ts` — pure tier math (1 unit = retail, 10+ = −15%, 50+ = −30%).
+- `src/store/useCatalogStore.ts` — catalog plus a Realtime subscription to
+  `group_buys` (one Postgres-trigger UPDATE per join).
+- `src/locales/` — full RU / KK / EN localization, including Russian plurals.
+- eSIM layer — a concept per the brief: a mock verification animation in
+  onboarding and before joining, a "verified via eSIM" badge, and an explainer
+  screen. There is no real carrier integration.
 
-## Что внутри
+## MVP limitations (deliberate, per the hackathon brief)
 
-- `src/app/` — экраны (expo-router): онбординг (интересы → бюджет → город → eSIM-верификация), табы (лента / группы / поиск / профиль), `product/[id]`, `group/[id]`.
-- `src/lib/recommendations.ts` — прозрачный скоринг: 0.40·интересы + 0.20·бюджет + 0.25·популярность + 0.15·активность группы.
-- `src/lib/groupBuy.ts` — чистая математика тиров (1 шт = розница, 10+ = −15%, 50+ = −30%).
-- `src/store/useCatalogStore.ts` — каталог + Realtime-подписка на `group_buys` (один UPDATE на join через триггер в Postgres).
-- `src/locales/` — полная локализация RU / KK / EN, включая русские плюралы («1 участник / 2 участника / 5 участников»).
-- eSIM-слой — **концепт по ТЗ**: mock-анимация верификации в онбординге и перед join, бейдж «Верифицирован через eSIM», экран-объяснение архитектуры (профиль → SIM-идентификация).
-
-## Ограничения MVP (осознанные, по ТЗ хакатона)
-
-Mock-каталог вместо реальных API маркетплейсов · фиксированный курс 1 USD = 512 ₸ ·
-рекомендации — скоринг, не ML · eSIM — UI-концепт без интеграции с операторами ·
-оплата и логистика не реализованы.
+Mock catalog instead of live marketplace APIs · fixed exchange rate
+(1 USD = 512 tenge) · recommendations are scoring, not ML · eSIM is a UI concept
+with no carrier integration · payment and logistics are not implemented.
